@@ -114,6 +114,12 @@ config BR2_PACKAGE_UTIL_LINUX_CRAMFS
 	  Utilities for compressed ROM file system (fsck.cramfs,
 	  mkfs.cramfs)
 
+config BR2_PACKAGE_UTIL_LINUX_DMESG
+	bool "dmesg"
+	default y if BR2_PACKAGE_UTIL_LINUX_BINARIES
+	help
+	  Display kernel messages and follow new messages with dmesg -w.
+
 config BR2_PACKAGE_UTIL_LINUX_EJECT
 	bool "eject"
 	depends on BR2_USE_MMU # fork()
