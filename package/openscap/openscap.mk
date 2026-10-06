@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-OPENSCAP_VERSION = 1.3.12
+OPENSCAP_VERSION = 1.4.4
 OPENSCAP_SITE = https://github.com/OpenSCAP/openscap/releases/download/$(OPENSCAP_VERSION)
 OPENSCAP_LICENSE = LGPL-2.1+
 OPENSCAP_LICENSE_FILES = COPYING
@@ -17,16 +17,15 @@ OPENSCAP_DEPENDENCIES = \
 	libxml2 \
 	libxmlsec1 \
 	libxslt \
-	pcre
+	pcre2
 
 HOST_OPENSCAP_DEPENDENCIES = \
 	host-pkgconf \
 	host-libcurl \
-	host-libgcrypt \
 	host-libxml2 \
 	host-libxmlsec1 \
 	host-libxslt \
-	host-pcre
+	host-pcre2
 
 OPENSCAP_CONF_OPTS = \
 	-DENABLE_OSCAP_UTIL=ON \
@@ -36,7 +35,6 @@ OPENSCAP_CONF_OPTS = \
 	-DENABLE_OSCAP_UTIL_VM=OFF \
 	-DENABLE_PROBES_WINDOWS=OFF \
 	-DENABLE_TESTS=OFF \
-	-DWITH_CRYPTO=gcrypt \
 	-DENABLE_PYTHON3=OFF
 
 HOST_OPENSCAP_CONF_OPTS = \
@@ -47,7 +45,6 @@ HOST_OPENSCAP_CONF_OPTS = \
 	-DENABLE_OSCAP_UTIL_VM=OFF \
 	-DENABLE_PROBES_WINDOWS=OFF \
 	-DENABLE_TESTS=OFF \
-	-DWITH_CRYPTO=gcrypt \
 	-DENABLE_PYTHON3=OFF
 
 ifeq ($(BR2_PACKAGE_ACL),y)
@@ -60,10 +57,10 @@ endif
 
 ifeq ($(BR2_PACKAGE_LIBGCRYPT),y)
 OPENSCAP_DEPENDENCIES += libgcrypt
-endif
-
-ifeq ($(BR2_PACKAGE_LIBNSS),y)
+OPENSCAP_CONF_OPTS += -DWITH_CRYPTO=gcrypt
+else ifeq ($(BR2_PACKAGE_LIBNSS),y)
 OPENSCAP_DEPENDENCIES += libnss
+OPENSCAP_CONF_OPTS += -DWITH_CRYPTO=nss
 endif
 
 ifneq ($(BR2_TOOLCHAIN_USES_GLIBC),y)

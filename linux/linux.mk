@@ -164,7 +164,7 @@ LINUX_MAKE_FLAGS = \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	WERROR=0 \
 	REGENERATE_PARSERS=1 \
-	DEPMOD=$(HOST_DIR)/sbin/depmod
+	DEPMOD=true
 
 ifeq ($(BR2_REPRODUCIBLE),y)
 LINUX_MAKE_ENV += \
@@ -419,6 +419,17 @@ define LINUX_KCONFIG_FIXUP_CMDS_ROOTFS_CPIO
 endef
 endif
 
+# Since kernel >= 6.15.y, x86 and x86_64 kernels requires a toolchain
+# with SSP support when CONFIG_STACKPROTECTOR is enabled.
+# For toolchains without SSP support, make sure to disable
+# CONFIG_STACKPROTECTOR to avoid link issues when building kernel
+# modules.
+ifeq ($(BR2_i386)$(BR2_x86_64):$(BR2_TOOLCHAIN_HAS_SSP),y:)
+define LINUX_FIXUP_CONFIG_STACKPROTECTOR
+	$(call KCONFIG_DISABLE_OPT,CONFIG_STACKPROTECTOR)
+endef
+endif
+
 define LINUX_KCONFIG_FIXUP_CMDS
 	@$(call MESSAGE,"Updating kernel config with fixups")
 	$(if $(LINUX_NEEDS_MODULES),
@@ -429,6 +440,7 @@ define LINUX_KCONFIG_FIXUP_CMDS
 	)
 	$(LINUX_FIXUP_CONFIG_ENDIANNESS)
 	$(LINUX_FIXUP_CONFIG_PAHOLE_CHECK)
+	$(LINUX_FIXUP_CONFIG_STACKPROTECTOR)
 	$(if $(BR2_arm)$(BR2_armeb),
 		$(call KCONFIG_ENABLE_OPT,CONFIG_AEABI))
 	$(if $(BR2_powerpc)$(BR2_powerpc64)$(BR2_powerpc64le),
@@ -474,7 +486,6 @@ define LINUX_KCONFIG_FIXUP_CMDS
 		$(call KCONFIG_ENABLE_OPT,CONFIG_LOGO)
 		$(call KCONFIG_ENABLE_OPT,CONFIG_LOGO_LINUX_CLUT224))
 	$(call KCONFIG_DISABLE_OPT,CONFIG_GCC_PLUGINS)
-	$(call KCONFIG_DISABLE_OPT,CONFIG_WERROR)
 	$(PACKAGES_LINUX_CONFIG_FIXUPS)
 endef
 
@@ -697,7 +708,7 @@ linux-rebuild-with-initramfs: rootfs-cpio
 linux-rebuild-with-initramfs:
 	@$(call MESSAGE,"Rebuilding kernel with initramfs")
 	# Build the kernel.
-	$(LINUX_MAKE_ENV) $(BR2_MAKE) $(LINUX_MAKE_FLAGS) -C $(LINUX_DIR) $(LINUX_TARGET_NAME)
+	+$(LINUX_MAKE_ENV) $(BR2_MAKE) $(LINUX_MAKE_FLAGS) -C $(LINUX_DIR) $(LINUX_TARGET_NAME)
 	$(LINUX_APPEND_DTB)
 	# Copy the kernel image(s) to its(their) final destination
 	$(call LINUX_INSTALL_IMAGE,$(BINARIES_DIR))
