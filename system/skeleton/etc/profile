@@ -10,4 +10,4 @@ for i in /etc/profile.d/*.sh ; do
 done
 unset i
 
-alias ls="ls --color=auto'
+alias ls='ls --color=auto'
