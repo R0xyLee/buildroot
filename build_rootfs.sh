@@ -3,6 +3,7 @@
 set -euo pipefail
 
 buildroot_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+image_output_dir=${IMAGE_OUTPUT_DIR:-"$buildroot_dir/../output/system"}
 kernel_dir=${KERNEL_DIR:-"$buildroot_dir/../8mp_v6.1"}
 kernel_build_dir=${KERNEL_BUILD_DIR:-"$kernel_dir"}
 tftp_dir=${TFTP_DIR:-"$HOME/tftp_dir"}
@@ -33,7 +34,8 @@ usage()
 --no-deploy    只构建、打包，不使用 sudo，不修改 TFTP 目录
 --deploy-only  部署之前生成的完整包，不重新编译
 
-可覆盖环境变量：JOBS、KERNEL_DIR、KERNEL_BUILD_DIR、CROSS_COMPILE、TFTP_DIR。
+可覆盖环境变量：JOBS、KERNEL_DIR、KERNEL_BUILD_DIR、CROSS_COMPILE、TFTP_DIR、IMAGE_OUTPUT_DIR。
+镜像包默认输出到 SDK 根目录的 output/system/；组件内部保留编译中间文件。
 请以普通用户运行；部署阶段自动调用 sudo。
 替换正在被板端挂载的 NFS rootfs 会影响运行，请先停止板端系统。
 EOF
@@ -136,7 +138,9 @@ if [[ -z "$deploy_bundle" ]]; then
 	release=$(cat "$kernel_build_dir/include/config/kernel.release")
 	[[ "$release" =~ ^[a-zA-Z0-9._+-]+$ ]] || die "内核版本字符串不合法"
 	[[ -s "$kernel_build_dir/Module.symvers" ]] || die "缺少内核 Module.symvers"
-	deploy_bundle=$(mktemp -d "$buildroot_dir/output/images/netboot-$(date +%Y%m%d-%H%M%S).XXXXXX")
+	mkdir -p -- "$image_output_dir"
+	image_output_dir=$(realpath -e -- "$image_output_dir")
+	deploy_bundle=$(mktemp -d "$image_output_dir/netboot-$(date +%Y%m%d-%H%M%S).XXXXXX")
 	module_stage="$deploy_bundle/modules-stage"
 	"${kernel_make[@]}" "INSTALL_MOD_PATH=$module_stage" INSTALL_MOD_STRIP=1 modules_install
 	depmod -e -E "$kernel_build_dir/Module.symvers" -b "$module_stage" "$release" \
