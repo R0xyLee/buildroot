@@ -1,0 +1,22 @@
+From: R0xy <liluoxi.llx@alibaba-inc.com>
+Subject: [PATCH] util: Preserve const for the directory separator
+
+GCC 15 preserves the const qualifier in strrchr's return type when
+compiling with C23. The input path is read-only; only the allocated
+directory buffer needs a writable pointer.
+
+Upstream: Pending
+Signed-off-by: R0xy <liluoxi.llx@alibaba-inc.com>
+---
+ util.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/util.c b/util.c
+--- a/util.c
++++ b/util.c
+@@ -1155,3 +1155,4 @@ UTI_PathToDir(const char *path)
+ {
+-  char *dir, *slash;
++  const char *slash;
++  char *dir;
+   size_t dir_len;
